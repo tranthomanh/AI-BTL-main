@@ -50,6 +50,13 @@ def sentence1() -> Expr:
     (not A) or (not B) or C
     """
     "*** BEGIN YOUR CODE HERE ***"
+    A = Expr('A')
+    B = Expr('B')
+    C = Expr('C')
+    Q1 = A|B
+    Q2 = ~A % (~B|C)
+    Q3 = disjoin([~A, ~B, C])
+    return conjoin([Q1,Q2,Q3])
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -63,6 +70,15 @@ def sentence2() -> Expr:
     (not D) implies C
     """
     "*** BEGIN YOUR CODE HERE ***"
+    A = Expr('A')
+    B = Expr('B')
+    C = Expr('C')
+    D = Expr('D')
+    Q1 = C % (B | D)
+    Q2 = A >> (~B & ~D)
+    Q3 = ~(B & ~C) >>A
+    Q4 = ~D >> C
+    return conjoin([Q1,Q2,Q3,Q4])
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -80,6 +96,14 @@ def sentence3() -> Expr:
     Pacman is born at time 0.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    PA0 = Expr('PacmanAlive_0')
+    PA1 = Expr('PacmanAlive_1')
+    PB0 = Expr('PacmanBorn_0')
+    PK0 = Expr('PacmanKilled_0')
+    Q1 = PA1 % ((PA0 & ~PK0 | ~PA0 & PB0))
+    Q2 = ~(PA0 & PB0)
+    Q3 = PB0
+    return conjoin([Q1,Q2,Q3])
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -89,29 +113,35 @@ def findModel(sentence: Expr) -> Dict[Expr, bool]:
     """
     cnf_sentence = to_cnf(sentence)
     return pycoSAT(cnf_sentence)
-
 def findModelUnderstandingCheck() -> Dict[Expr, bool]:
     """Returns the result of findModel(Expr('a')) if lower cased expressions were allowed.
     You should not use findModel or Expr in this method.
     """
     a = Expr('A')
     "*** BEGIN YOUR CODE HERE ***"
-    print("a.__dict__ is:", a.__dict__) # might be helpful for getting ideas
+    a.op = 'a'
+    return {a: True}
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
-
 def entails(premise: Expr, conclusion: Expr) -> bool:
     """Returns True if the premise entails the conclusion and False otherwise.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    a = findModel(~(premise >> conclusion))
+    if a is False:
+        return True
+    return False
+    
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
-
 def plTrueInverse(assignments: Dict[Expr, bool], inverse_statement: Expr) -> bool:
     """Returns True if the (not inverse_statement) is True given assignments and False otherwise.
     pl_true may be useful here; see logic.py for its description.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    if pl_true(inverse_statement, assignments) is False:
+        return True
+    return False
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -580,8 +610,6 @@ def modelToString(model: Dict[Expr, bool]) -> str:
         # Dictionary
         modelList = sorted(model.items(), key=lambda item: str(item[0]))
         return str(modelList)
-
-
 def extractActionSequence(model: Dict[Expr, bool], actions: List) -> List:
     """
     Convert a model in to an ordered list of actions.
