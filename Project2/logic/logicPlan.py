@@ -233,6 +233,8 @@ def pacmanSuccessorAxiomSingle(x: int, y: int, time: int, walls_grid: List[List[
         return None
     
     "*** BEGIN YOUR CODE HERE ***"
+    pacmanPositionNow = PropSymbolExpr(pacman_str, x, y, time = time)
+    return pacmanPositionNow % disjoin(possible_causes)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -304,7 +306,31 @@ def pacphysicsAxioms(t: int, all_coords: List[Tuple], non_outer_wall_coords: Lis
     pacphysics_sentences = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    #Những nơi có tường -> ko có Pacman
+    pacIsNotAt = []
+    for ords in all_coords:
+        x, y = ords
+        pacIsNotAt.append(PropSymbolExpr(wall_str, x, y) >> ~PropSymbolExpr(pacman_str, x, y, time=t))
+    pacphysics_sentences.append(conjoin(pacIsNotAt))
+    #Chọn 1 ô mà Pacman có thể đứng ở thời điểm t
+    movableMoves = []
+    for ords in non_outer_wall_coords:
+        x, y = ords
+        movableMoves.append(PropSymbolExpr(pacman_str, x, y, time=t))
+    pacphysics_sentences.append(exactlyOne(movableMoves))
+    #Chọn 1 hành động mà Pacman làm ở thời điểm t
+    ableAction = []
+    for dir in DIRECTIONS:
+        ableAction.append(PropSymbolExpr(dir, time=t))
+    pacphysics_sentences.append(exactlyOne(ableAction))
+    #Tồn tại sensorMode thì thêm vào sentence
+    if sensorModel is not None:
+        pacphysics_sentences.append(sensorModel(t, non_outer_wall_coords))
+    #Tồn tại successorAxioms thì thêm vào sentence
+    if successorAxioms is not None:
+        if t > 0:
+            pacphysics_sentences.append(successorAxioms(t, walls_grid, non_outer_wall_coords))
+    #util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
     return conjoin(pacphysics_sentences)
@@ -338,6 +364,22 @@ def checkLocationSatisfiability(x1_y1: Tuple[int, int], x0_y0: Tuple[int, int], 
     KB.append(conjoin(map_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
+    #Add to KB: pacphysics_axioms(...) with the appropriate timesteps
+    KB.append(pacphysicsAxioms(1, all_coords, non_outer_wall_coords, walls_grid, None, allLegalSuccessorAxioms))
+    KB.append(pacphysicsAxioms(0, all_coords, non_outer_wall_coords, walls_grid, None, allLegalSuccessorAxioms))
+    #Add to KB: Pacman’s current location(x0,y0)
+    pacmanCurrentPosition = PropSymbolExpr(pacman_str, x0, y0, time=0)
+    KB.append(pacmanCurrentPosition)
+    #Add to KB: Pacman takes action0
+    pacmanTakesA0 = PropSymbolExpr(action0, time=0)
+    KB.append(pacmanTakesA0)
+    #Add to KB: Pacman takes action1
+    pacmanTakesA1 = PropSymbolExpr(action1, time=1)
+    KB.append(pacmanTakesA1)
+    # the variable for whether Pacman is at (x1,y1) at time 1
+    pacmanPostiton = PropSymbolExpr(pacman_str, x1, y1, time=1)
+    #Query the SAT solver with findModel for two models 
+    return findModel(conjoin(KB) & pacmanPostiton), findModel(conjoin(KB) & ~pacmanPostiton)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
