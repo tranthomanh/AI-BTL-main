@@ -522,9 +522,43 @@ def localization(problem, agent) -> Generator:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    #intialize wall variables
+    for wall in walls_list:
+        xW, yW = wall
+        KB.append(PropSymbolExpr(wall_str,xW, yW))
+
+    # intialize non-wall variables
+    for ords in non_outer_wall_coords:
+        x, y = ords
+        if ords in walls_list:
+            continue
+        KB.append(~PropSymbolExpr(wall_str,x, y))
 
     for t in range(agent.num_timesteps):
+        #Add pacphysics to KB
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, walls_grid, sensorModel=sensorAxioms,
+                                   successorAxioms=allLegalSuccessorAxioms))
+        #Add actions to KB
+        KB.append(PropSymbolExpr(agent.actions[t], time=t))
+        #Add percept rules to KB
+        perceptRules = fourBitPerceptRules(t, agent.getPercepts())
+        KB.append(perceptRules)
+        #Find possible pacman locations with updated KB
+        possible_locations = []
+
+        for ords in non_outer_wall_coords:
+            x, y = ords
+            #If there exists a satisfying assignment where Pacman is at (x,y) at timestep t
+            availMove = conjoin(KB) & PropSymbolExpr(pacman_str, x, y, time=t)
+            if findModel(availMove) is not False:
+                possible_locations.append((x, y))
+            #Update KB with Pacman is at/not at (x,y) at timestep t
+            if entails(premise=conjoin(KB), conclusion=PropSymbolExpr(pacman_str, x, y, time=t)) is True:
+                KB.append(PropSymbolExpr(pacman_str, x, y, time=t))
+            if entails(premise=conjoin(KB), conclusion=~PropSymbolExpr(pacman_str, x, y, time=t)) is True:
+                KB.append(~PropSymbolExpr(pacman_str, x, y, time=t))
+
+        agent.moveToNextState(agent.actions[t])
         "*** END YOUR CODE HERE ***"
         yield possible_locations
 
