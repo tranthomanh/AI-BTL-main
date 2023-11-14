@@ -1,5 +1,4 @@
 import nn
-####
 class PerceptronModel(object):
     def __init__(self, dimensions):
         """
