@@ -462,6 +462,47 @@ def foodLogicPlan(problem) -> List:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
+     #Add to KB: Initial knowledge: Pacman’s initial location at timestep 0, Food List at timestep 0
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+    for foodPos in food:
+        xF, yF = foodPos
+        KB.append(PropSymbolExpr(food_str, xF, yF, time = 0))
+    #for t in range(50) (because Autograder will not test on layouts requiring ≥50 timesteps) ...
+    for t in range(50):
+        # print(t)
+        #Add to KB: Initial knowledge
+        movableMoves = []
+        for coord in non_wall_coords:
+            x,y = coord
+            movableMoves.append(PropSymbolExpr(pacman_str, x, y, time=t))
+        KB.append(exactlyOne(movableMoves))
+        #Add to KB: Pacman takes exactly one action per timestep.
+        posAction = []
+        for act in actions:
+            posAction.append(PropSymbolExpr(act, time = t))
+        KB.append(exactlyOne(posAction))
+        #Add to KB: Transition Model sentences
+        if t > 0:
+            for coord in non_wall_coords:
+                x, y = coord
+                KB.append(pacmanSuccessorAxiomSingle(x, y, time = t, walls_grid=walls))
+        #Make relation between Food[x,y]_t+1 and Food[x,y]_t and Pacman[x,y]_t
+        relationFood = []
+        for posFood in food:
+            xF, yF = posFood
+            relationCur = (PropSymbolExpr(food_str, xF, yF, time = t) & ~PropSymbolExpr(pacman_str, xF, yF, time = t)) >> PropSymbolExpr(food_str, xF, yF, time = t+1)
+            relationFood.append(relationCur)
+        KB.append(conjoin(relationFood))
+        #Add to KB: possible Food at timestep t
+        possibleFood = []
+        for posFood in food:
+            xF,yF = posFood
+            possibleFood.append(PropSymbolExpr(food_str, xF, yF, time = t))
+        #Use findModel and pass in the Food List and KB
+        posModel = findModel(conjoin(KB) & ~disjoin(possibleFood))
+        if posModel is not False:
+            listAction = extractActionSequence(posModel, actions)
+            return listAction
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
