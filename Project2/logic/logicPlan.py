@@ -407,6 +407,32 @@ def positionLogicPlan(problem) -> List:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
+    #Add to KB: Initial knowledge: Pacman’s initial location at timestep 0
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+    #for t in range(50) (because Autograder will not test on layouts requiring ≥50 timesteps) ...
+    for t in range(50):
+        # print(t)
+        #Add to KB: Initial knowledge
+        movableMoves = []
+        for coord in non_wall_coords:
+            x,y = coord
+            movableMoves.append(PropSymbolExpr(pacman_str, x, y, time=t))
+        KB.append(exactlyOne(movableMoves))
+        #Add to KB: Pacman takes exactly one action per timestep.
+        posAction = []
+        for act in actions:
+            posAction.append(PropSymbolExpr(act, time = t))
+        KB.append(exactlyOne(posAction))
+        #Add to KB: Transition Model sentences
+        if t > 0:
+            for coord in non_wall_coords:
+                x, y = coord
+                KB.append(pacmanSuccessorAxiomSingle(x, y, time = t, walls_grid=walls_grid))
+        #Use findModel and pass in the Goal Assertion and KB
+        posModel = findModel(conjoin(KB) & PropSymbolExpr(pacman_str, xg, yg, time = t))
+        if posModel is not False:
+            listAction = extractActionSequence(posModel, actions)
+            return listAction
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
