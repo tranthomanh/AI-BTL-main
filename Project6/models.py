@@ -58,7 +58,10 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
-
+        self.m1 = nn.Parameter(1, 100)
+        self.b1 = nn.Parameter(1, 100)
+        self.m2 = nn.Parameter(100, 1)
+        self.b2 = nn.Parameter(1, 1)
     def run(self, x):
         """
         Runs the model for a batch of examples.
@@ -69,7 +72,15 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
-
+        # print(x)
+        x = nn.Linear(x, self.m1)
+        x = nn.AddBias(x, self.b1)
+        x = nn.ReLU(x)
+        # print(x)
+        x = nn.Linear(x, self.m2)
+        x = nn.AddBias(x, self.b2)
+        # print(x)
+        return x
     def get_loss(self, x, y):
         """
         Computes the loss for a batch of examples.
@@ -81,13 +92,28 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
-
+        return nn.SquareLoss(self.run(x), y)
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
-
+        n_step = 10000
+        learning_rate = -0.05
+        # for i in range(n_step):
+        endTrain = False
+        while True:
+            if endTrain:
+                break
+            for x, y in dataset.iterate_once(100):
+                loss = self.get_loss(x, y)
+                if nn.as_scalar(loss) < 0.015:
+                    endTrain = True
+                grad_wrt_m1, grad_wrt_b1, grad_wrt_m2, grad_wrt_b2 = nn.gradients(loss[self.m1, self.b1, self.m2, self.b2])
+                self.m1.update(grad_wrt_m1, learning_rate)
+                self.b1.update(grad_wrt_b1, learning_rate)
+                self.m2.update(grad_wrt_m2, learning_rate)
+                self.b2.update(grad_wrt_b2, learning_rate)
 class DigitClassificationModel(object):
     """
     A model for handwritten digit classification using the MNIST dataset.
